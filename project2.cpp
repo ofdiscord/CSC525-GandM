@@ -51,23 +51,26 @@ const int CURSOR_SIZE   = 10;
 
 // global access variables
 
-int linePosition = 0;
+int lastLinePosition = 0;
+int currentLinePosition = 0;
 
 
 void drawCursor(){
 
-	glColor3f(1, 0, 0);
-
+	// set polygon mode to fill
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+	// clear old cursor
+	glColor3f(1, 1, 1);
+
 	int x0 = (-WINDOW_WIDTH / 2) + MARGIN;
-	int y0 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN;
+	int y0 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN);
 	int x1 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	int y1 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN;
+	int y1 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN);
 	int x3 = (-WINDOW_WIDTH / 2) + MARGIN;
-	int y3 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+	int y3 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - LINE_HEIGHT;
 	int x2 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	int y2 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+	int y2 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - LINE_HEIGHT;
 
 	glBegin(GL_POLYGON);
 		glVertex2i(x0, y0);
@@ -75,15 +78,31 @@ void drawCursor(){
 		glVertex2i(x2, y2);
 		glVertex2i(x3, y3);
 	glEnd();
+
+	// draw new cursor
+	glColor3f(1, 0, 0);
+
+	x0 = (-WINDOW_WIDTH / 2) + MARGIN;
+	y0 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN;
+	x1 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
+	y1 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN;
+	x3 = (-WINDOW_WIDTH / 2) + MARGIN;
+	y3 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+	x2 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
+	y2 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+
+	glBegin(GL_POLYGON);
+		glVertex2i(x0, y0);
+		glVertex2i(x1, y1);
+		glVertex2i(x2, y2);
+		glVertex2i(x3, y3);
+	glEnd();
+
+	glFlush();
 }
 
 
-void drawDebug(){
-
-	// If user clicks on a line, place the cursor there
-
-	if (linePosition >= 0 && linePosition < 30)
-		drawCursor();
+void drawLines(){
 
 	// Draw margin lines and others just to see layout of page
 
@@ -105,15 +124,6 @@ void drawDebug(){
 
 ///////////////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------------- //
-// Mouse Click Func   
-// Info Window: Opens when specified area on screen is clicked
-// ----------------------------------------------------------------------------- //
-void OnMouseClick(int button, int state, int x, int y){
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------------- //
 // ############################################################################# //
 // ----------------------------------------------------------------------------- //
 
@@ -132,7 +142,7 @@ void Init(){
 void myDisplayCallback(){
 
 	glClear(GL_COLOR_BUFFER_BIT);	// draw the background
-	drawDebug();
+	drawLines();
 	glFlush(); // flush out the buffer contents
 }
 
@@ -142,9 +152,11 @@ void myDisplayCallback(){
 // ----------------------------------------------------------------------------- //
 void mouseCallback(int button, int state, int x, int y){
 
-	linePosition = std::ceil((y - MARGIN) / 18);
-	cout << linePosition << "\n";
-	myDisplayCallback();
+	if (currentLinePosition >= 0 && currentLinePosition < 30)
+		drawCursor();
+
+	lastLinePosition = currentLinePosition;
+	currentLinePosition = std::ceil((y - MARGIN) / 18);
 }
 
 
