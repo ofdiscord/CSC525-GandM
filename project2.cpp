@@ -26,6 +26,7 @@ INSTRUCTION FOR COMPILATION AND EXECUTION:
 3.		Press Ctrl+Shift+B					to BUILD (COMPILE+LINK)
 4.		Press Ctrl+F5						to EXECUTE
 ==================================================================================================*/
+#include <stdlib.h>
 #include <GL/glut.h>				// include GLUT library
 #include <iostream>
 #include <cmath>
@@ -42,7 +43,7 @@ const int WINDOW_WIDTH  = 800;
 
 const int LINE_HEIGHT   = 18; // will likely change
 
-const int MARGIN        = 10; 
+const int MARGIN        = 20; 
 
 const int MAX_LINES     = 30;
 
@@ -50,7 +51,7 @@ const int CURSOR_SIZE   = 10;
 
 // global access variables
 
-int linePosition = 1;
+int linePosition = 0;
 
 
 void drawCursor(){
@@ -60,13 +61,13 @@ void drawCursor(){
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	int x0 = (-WINDOW_WIDTH / 2) + MARGIN;
-	int y0 = (WINDOW_HEIGHT / 2) - ((linePosition - 1) * LINE_HEIGHT) - MARGIN;
+	int y0 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN;
 	int x1 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	int y1 = (WINDOW_HEIGHT / 2) - ((linePosition - 1) * LINE_HEIGHT) - MARGIN;
+	int y1 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN;
 	int x3 = (-WINDOW_WIDTH / 2) + MARGIN;
-	int y3 = (WINDOW_HEIGHT / 2) - ((linePosition - 1) * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+	int y3 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
 	int x2 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	int y2 = (WINDOW_HEIGHT / 2) - ((linePosition - 1) * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+	int y2 = (WINDOW_HEIGHT / 2) - (linePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
 
 	glBegin(GL_POLYGON);
 		glVertex2i(x0, y0);
@@ -81,7 +82,7 @@ void drawDebug(){
 
 	// If user clicks on a line, place the cursor there
 
-	if (linePosition > 0 && linePosition <= 30)
+	if (linePosition >= 0 && linePosition < 30)
 		drawCursor();
 
 	// Draw margin lines and others just to see layout of page
@@ -141,7 +142,8 @@ void myDisplayCallback(){
 // ----------------------------------------------------------------------------- //
 void mouseCallback(int button, int state, int x, int y){
 
-	linePosition = std::ceil((y + MARGIN) / 18);
+	linePosition = std::ceil((y - MARGIN) / 18);
+	cout << linePosition << "\n";
 	myDisplayCallback();
 }
 
