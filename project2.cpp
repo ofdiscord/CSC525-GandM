@@ -7,6 +7,8 @@ CONTRIBUTIONS:
 	Matt - 50%
 		
 	Garren - 50%
+	
+	Jamie -
 
 
 DESCRIPTION: Project 2 - Text Editor
