@@ -29,30 +29,28 @@ INSTRUCTION FOR COMPILATION AND EXECUTION:
 #include <stdlib.h>
 #include <GL/glut.h>				// include GLUT library
 #include <iostream>
+#include <string>
 #include <cmath>
 
+using std::string;
 using std::cout;
 
-// Globals
-
 // program constants
-
 const int WINDOW_HEIGHT = 600;
-
 const int WINDOW_WIDTH  = 800;
-
 const int LINE_HEIGHT   = 18; // will likely change
-
 const int MARGIN        = 20; 
-
 const int MAX_LINES     = 30;
-
 const int CURSOR_SIZE   = 10;
 
-// global access variables
+// global access variables: typing related
+int lastLinePosition    = 1;
+int textLinePosition    = 1;
+int currentLinePosition = 1;
+int totalTextWidth      = 0;
 
-int lastLinePosition = 0;
-int currentLinePosition = 0;
+// string to contain all text for different utilities
+string text = "";
 
 
 void drawCursor(){
@@ -64,13 +62,13 @@ void drawCursor(){
 	glColor3f(1, 1, 1);
 
 	int x0 = (-WINDOW_WIDTH / 2) + MARGIN;
-	int y0 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN);
+	int y0 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - 1;
 	int x1 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	int y1 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN);
+	int y1 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - 1;
 	int x3 = (-WINDOW_WIDTH / 2) + MARGIN;
-	int y3 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - LINE_HEIGHT;
+	int y3 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - LINE_HEIGHT + 1;
 	int x2 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	int y2 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - LINE_HEIGHT;
+	int y2 = (WINDOW_HEIGHT / 2) - (lastLinePosition * LINE_HEIGHT) - (MARGIN) - LINE_HEIGHT + 1;
 
 	glBegin(GL_POLYGON);
 		glVertex2i(x0, y0);
@@ -83,13 +81,13 @@ void drawCursor(){
 	glColor3f(1, 0, 0);
 
 	x0 = (-WINDOW_WIDTH / 2) + MARGIN;
-	y0 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN;
+	y0 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - 1;
 	x1 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	y1 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN;
+	y1 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - 1;
 	x3 = (-WINDOW_WIDTH / 2) + MARGIN;
-	y3 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+	y3 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT + 2;
 	x2 = (-WINDOW_WIDTH / 2) + MARGIN + CURSOR_SIZE;
-	y2 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT;
+	y2 = (WINDOW_HEIGHT / 2) - (currentLinePosition * LINE_HEIGHT) - MARGIN - LINE_HEIGHT + 2;
 
 	glBegin(GL_POLYGON);
 		glVertex2i(x0, y0);
@@ -104,8 +102,7 @@ void drawCursor(){
 
 void drawLines(){
 
-	// Draw margin lines and others just to see layout of page
-
+	// draw margin lines and others just to see layout of page
 	glPointSize(1);
 
 	glBegin(GL_LINES);
@@ -146,6 +143,7 @@ void myDisplayCallback(){
 	glFlush(); // flush out the buffer contents
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------------- //
 // ############################################################################# //
@@ -156,7 +154,103 @@ void mouseCallback(int button, int state, int x, int y){
 		drawCursor();
 
 	lastLinePosition = currentLinePosition;
-	currentLinePosition = std::ceil((y - MARGIN) / 18);
+	currentLinePosition = std::ceil((y - MARGIN) / 18.0);
+
+	if (currentLinePosition > textLinePosition)
+		glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - currentLinePosition * LINE_HEIGHT - MARGIN);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------- //
+// ############################################################################# //
+// ----------------------------------------------------------------------------- //
+
+void keyboardCallback(unsigned char key, int x, int y){
+
+	// initialize to default color
+	glColor3f(0, 0, 0);
+
+	if (text.size() == 0)
+		// initialize raster position
+		glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - MARGIN - LINE_HEIGHT);
+
+	if (key == 8) // if backspace key
+	{
+		if (text.size() > 0) // make sure a normal key has been pressed first
+		{
+			glColor3f(0, 1, 0);
+
+			// last character x position
+			float charXPos;
+
+			if (std::ceil(text.size() / 30.0) < textLinePosition) // we are one line up now
+			{
+				if (textLinePosition > 1)
+				{
+					textLinePosition = std::ceil(text.size() / 30.0);
+
+					// content of that line so we can get its width
+					string lineContent = text.substr(((textLinePosition) * 30) - 1, 30);
+
+					// accumulate width
+					float lineWidth = 0;
+
+					for (int i = 0; i < lineContent.size() - 1; i++)
+						lineWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, (char)text[i]);
+
+					charXPos = lineWidth + MARGIN;
+				}
+			}
+			else
+			{
+				float lineWidth = 0;
+
+				for (int i = 0; i < text.size() - 1; i++)
+					lineWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, text[i]);
+
+				charXPos = lineWidth + MARGIN;
+			}
+
+			// last character to draw over
+			char lastChar = text[text.size() - 1];
+
+			// remove last character
+			text = text.substr(0, text.size() - 1);
+
+			// reduce the total width accordingly
+			totalTextWidth -= glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, text[text.size() - 1]);
+
+			// set the raster position
+			glRasterPos2f(charXPos - (WINDOW_WIDTH / 2), (float)((WINDOW_HEIGHT / 2) - (textLinePosition * LINE_HEIGHT) - MARGIN));
+
+			// draw over the last character
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, lastChar);
+
+			glFlush();
+		}
+	}
+	else
+	{
+		// set to current color
+		glColor3f(0, 0, 0);
+
+		// append typed key to text
+		text += key;
+
+		// update text width accordingly
+		totalTextWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, key);
+
+		if (30 % text.size() - 1 == 0) {
+			textLinePosition += 1;
+			glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - (textLinePosition * LINE_HEIGHT) - MARGIN);
+		}
+
+		// draw over the last character
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, key);
+
+		glFlush();
+	}
 }
 
 
@@ -177,6 +271,8 @@ int main(int argc, char **argv){
 	glutDisplayFunc(myDisplayCallback);		// register a callback
 
 	glutMouseFunc(mouseCallback);
+
+	glutKeyboardFunc(keyboardCallback);
 
 	glutMainLoop();							// get into an infinite loop
 
