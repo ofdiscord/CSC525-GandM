@@ -52,6 +52,13 @@ int totalTextWidth      = 0;
 // string to contain all text for different utilities
 string text = "";
 
+// partition sections
+struct partition {
+	float color[3];
+	string font;
+	string text;
+}
+
 
 void drawCursor(){
 
@@ -177,80 +184,18 @@ void keyboardCallback(unsigned char key, int x, int y){
 
 	if (key == 8) // if backspace key
 	{
-		if (text.size() > 0) // make sure a normal key has been pressed first
-		{
-			glColor3f(0, 1, 0);
-
-			// last character x position
-			float charXPos;
-
-			if (std::ceil(text.size() / 30.0) < textLinePosition) // we are one line up now
-			{
-				if (textLinePosition > 1)
-				{
-					textLinePosition = std::ceil(text.size() / 30.0);
-
-					// content of that line so we can get its width
-					string lineContent = text.substr(((textLinePosition) * 30) - 1, 30);
-
-					// accumulate width
-					float lineWidth = 0;
-
-					for (int i = 0; i < lineContent.size() - 1; i++)
-						lineWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, (char)text[i]);
-
-					charXPos = lineWidth + MARGIN;
-				}
-			}
-			else
-			{
-				float lineWidth = 0;
-
-				for (int i = 0; i < text.size() - 1; i++)
-					lineWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, text[i]);
-
-				charXPos = lineWidth + MARGIN;
-			}
-
-			// last character to draw over
-			char lastChar = text[text.size() - 1];
-
-			// remove last character
-			text = text.substr(0, text.size() - 1);
-
-			// reduce the total width accordingly
-			totalTextWidth -= glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, text[text.size() - 1]);
-
-			// set the raster position
-			glRasterPos2f(charXPos - (WINDOW_WIDTH / 2), (float)((WINDOW_HEIGHT / 2) - (textLinePosition * LINE_HEIGHT) - MARGIN));
-
-			// draw over the last character
-			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, lastChar);
-
-			glFlush();
-		}
 	}
 	else
 	{
 		// set to current color
 		glColor3f(0, 0, 0);
 
-		// append typed key to text
-		text += key;
-
-		// update text width accordingly
-		totalTextWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, key);
-
-		if (30 % text.size() - 1 == 0) {
-			textLinePosition += 1;
-			glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - (textLinePosition * LINE_HEIGHT) - MARGIN);
-		}
-
 		// draw over the last character
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, key);
 
-		glFlush();
 	}
+
+	glFlush();
 }
 
 
@@ -269,9 +214,7 @@ int main(int argc, char **argv){
 	Init();									// setting up
 
 	glutDisplayFunc(myDisplayCallback);		// register a callback
-
 	glutMouseFunc(mouseCallback);
-
 	glutKeyboardFunc(keyboardCallback);
 
 	glutMainLoop();							// get into an infinite loop
