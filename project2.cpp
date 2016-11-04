@@ -1,24 +1,26 @@
 /*==================================================================================================
-PROGRAMMERS: Matthew Wilson and Garren Ijames
+PROGRAMMERS: Jamie_____, Matthew Wilson and Garren Ijames
 COURSE: CSC 525/625
-MODIFIED BY: Matthew Wilson and Garren Ijames
-LAST MODIFIED DATE: 10/25/2016
+MODIFIED BY: Jamie_____, Matthew Wilson and Garren Ijames
+LAST MODIFIED DATE: 11/4/2016
 CONTRIBUTIONS:
-	Matt - 50%
-		
-	Garren - 50%
+	Matt - 33.3%
+
+	Garren - 33.3%
+
+	Jamie - 33.3%
 
 
 DESCRIPTION: Project 2 - Text Editor
 
-NOTES:	
+NOTES:
 
 
 	Extra Features:
 
 
 FILES: project2.cpp
-	
+
 IDE/COMPILER: Visual Studio 2013
 INSTRUCTION FOR COMPILATION AND EXECUTION:
 1.		Double click on projProject.sln		to OPEN the project
@@ -29,17 +31,21 @@ INSTRUCTION FOR COMPILATION AND EXECUTION:
 #include <stdlib.h>
 #include <GL/glut.h>				// include GLUT library
 #include <iostream>
+#include <vector>
 #include <string>
 #include <cmath>
 
+using std::vector;
 using std::string;
 using std::cout;
+
+// Variable Declarations
 
 // program constants
 const int WINDOW_HEIGHT = 600;
 const int WINDOW_WIDTH  = 800;
 const int LINE_HEIGHT   = 18; // will likely change
-const int MARGIN        = 20; 
+const int MARGIN        = 20;
 const int MAX_LINES     = 30;
 const int CURSOR_SIZE   = 10;
 
@@ -52,6 +58,81 @@ int totalTextWidth      = 0;
 // string to contain all text for different utilities
 string text = "";
 
+// partition sections
+struct Partition {
+	string type;
+	float color[3];
+	void *font;
+	string text;
+};
+
+// default style
+float defaultColor[3] {0, 0, 0};
+void* defaultFont = GLUT_BITMAP_HELVETICA_18;
+
+// active colors
+float activeColor[3];
+void* activeFont;
+
+// vector containing partitions
+vector<Partition> partitions;
+
+
+// Utility functions
+
+void createOrModifyPartition(float color[3] = activeColor, void *font = activeFont){
+
+	bool modifyPartition = partitions.size() > 0;
+	modifyPartition = modifyPartition && partitions[partitions.size() - 1].text == "";
+	modifyPartition = modifyPartition && partitions[partitions.size() - 1].type != "NEWLINE";
+
+	if (modifyPartition)
+	{
+			partitions[partitions.size() - 1].color[0] = color[0];
+			partitions[partitions.size() - 1].color[0] = color[1];
+			partitions[partitions.size() - 1].color[0] = color[2];
+			partitions[partitions.size() - 1].font = font;
+	}
+	else // create new partition
+	{
+		Partition partition;
+		partition.type = "DEFAULT";
+		partition.color[0] = color[0];
+		partition.color[1] = color[1];
+		partition.color[2] = color[2];
+		partition.font = font;
+		partitions.push_back(partition);
+	}
+}
+
+void createNewLine(){
+
+	// basically just a partition with all default styles and text = "\n"
+	Partition newline;
+	newline.type = "NEWLINE";
+	partitions.push_back(newline);
+}
+
+
+// Setting up functions
+
+void Init(){
+
+	// set active color and font to default
+	activeColor[0] = defaultColor[0];
+	activeColor[1] = defaultColor[1];
+	activeColor[2] = defaultColor[2];
+	activeFont = defaultFont;
+
+	// initialize partitions to a default font and color
+	createOrModifyPartition();
+
+	glClearColor(1, 1, 1, 0);			// specify a background color: white
+	gluOrtho2D(-400, 400, -300, 300);  // specify a viewing area
+}
+
+
+// Draw functions
 
 void drawCursor(){
 
@@ -99,6 +180,41 @@ void drawCursor(){
 	glFlush();
 }
 
+void drawPartitions(){
+
+	int lastPartitionWidth = 0;
+	int runningTotal = 0;
+	int drawLinePosition = 1;
+
+	for (int i = 0; i < partitions.size(); i++)
+	{
+		int lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN;
+
+		if (partitions[i].type == "NEWLINE") {
+			drawLinePosition += 1;
+			lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN;
+			lastPartitionWidth = 0;
+			runningTotal = 0;
+		}
+
+		glColor3fv(partitions[i].color);
+		glRasterPos2i(lastPartitionWidth - (WINDOW_WIDTH / 2) + MARGIN, lineHeight);
+
+		for (int j = 0; j < partitions[i].text.size(); j++)
+		{
+			runningTotal += 1;
+
+			if (runningTotal % 30 == 0) {
+				drawLinePosition += 1;
+				lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN;
+				glRasterPos2i(-(WINDOW_WIDTH / 2) + MARGIN, lineHeight);
+				lastPartitionWidth = 0;
+			}
+			glutBitmapCharacter(partitions[i].font, partitions[i].text[j]);
+			lastPartitionWidth += glutBitmapWidth(partitions[i].font, partitions[i].text[j]);
+		}
+	}
+}
 
 void drawLines(){
 
@@ -119,166 +235,157 @@ void drawLines(){
 	glEnd();
 }
 
-///////////////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------------- //
-// ############################################################################# //
-// ----------------------------------------------------------------------------- //
-
-void Init(){
-
-	glClearColor(1, 1, 1, 0);			// specify a background clor: white 
-	gluOrtho2D(-400, 400, -300, 300);  // specify a viewing area
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------------- //
-// ############################################################################# //
-// ----------------------------------------------------------------------------- //
-
-void myDisplayCallback(){
+void drawDisplay(){
 
 	glClear(GL_COLOR_BUFFER_BIT);	// draw the background
 	drawLines();
+	drawPartitions();
+	drawCursor();
 	glFlush(); // flush out the buffer contents
 }
 
+// Input callbacks
 
-///////////////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------------- //
-// ############################################################################# //
-// ----------------------------------------------------------------------------- //
 void mouseCallback(int button, int state, int x, int y){
-
 	if (currentLinePosition >= 0 && currentLinePosition < 30)
 		drawCursor();
 
 	lastLinePosition = currentLinePosition;
-	currentLinePosition = std::ceil((y - MARGIN) / 18.0);
+	currentLinePosition = std::floor((y - MARGIN) / 18.0);
+
 
 	if (currentLinePosition > textLinePosition)
 		glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - currentLinePosition * LINE_HEIGHT - MARGIN);
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------------- //
-// ############################################################################# //
-// ----------------------------------------------------------------------------- //
-
 void keyboardCallback(unsigned char key, int x, int y){
 
-	// initialize to default color
-	glColor3f(0, 0, 0);
-
-	if (text.size() == 0)
+	if (text.size() == 0) {
 		// initialize raster position
 		glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - MARGIN - LINE_HEIGHT);
+	}
 
 	if (key == 8) // if backspace key
 	{
-		if (text.size() > 0) // make sure a normal key has been pressed first
-		{
-			glColor3f(0, 1, 0);
+		if (partitions[partitions.size() - 1].type == "NEWLINE") {
+			partitions.pop_back();
+			drawDisplay();
+		}
+		else {
+			// remove the last character from the current partition
+			int textSize = partitions[partitions.size() - 1].text.size();
 
-			// last character x position
-			float charXPos;
-
-			if (std::ceil(text.size() / 30.0) < textLinePosition) // we are one line up now
-			{
-				if (textLinePosition > 1)
-				{
-					textLinePosition = std::ceil(text.size() / 30.0);
-
-					// content of that line so we can get its width
-					string lineContent = text.substr(((textLinePosition) * 30) - 1, 30);
-
-					// accumulate width
-					float lineWidth = 0;
-
-					for (int i = 0; i < lineContent.size() - 1; i++)
-						lineWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, (char)text[i]);
-
-					charXPos = lineWidth + MARGIN;
+			if (textSize == 0) {
+				if (partitions.size() > 1) {
+					partitions.pop_back();
 				}
 			}
-			else
-			{
-				float lineWidth = 0;
-
-				for (int i = 0; i < text.size() - 1; i++)
-					lineWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, text[i]);
-
-				charXPos = lineWidth + MARGIN;
+			else {
+				string newText = partitions[partitions.size() - 1].text.substr(0, textSize - 1);
+				partitions[partitions.size() - 1].text = newText;
 			}
-
-			// last character to draw over
-			char lastChar = text[text.size() - 1];
-
-			// remove last character
-			text = text.substr(0, text.size() - 1);
-
-			// reduce the total width accordingly
-			totalTextWidth -= glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, text[text.size() - 1]);
-
-			// set the raster position
-			glRasterPos2f(charXPos - (WINDOW_WIDTH / 2), (float)((WINDOW_HEIGHT / 2) - (textLinePosition * LINE_HEIGHT) - MARGIN));
-
-			// draw over the last character
-			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, lastChar);
-
-			glFlush();
+			drawDisplay();
 		}
+	}
+	else if (key == 13) // ENTER
+	{
+		createNewLine();
+		createOrModifyPartition();
+		drawDisplay();
 	}
 	else
 	{
-		// set to current color
-		glColor3f(0, 0, 0);
-
-		// append typed key to text
-		text += key;
-
-		// update text width accordingly
-		totalTextWidth += glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, key);
-
-		if (30 % text.size() - 1 == 0) {
-			textLinePosition += 1;
-			glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - (textLinePosition * LINE_HEIGHT) - MARGIN);
-		}
-
-		// draw over the last character
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, key);
-
-		glFlush();
+		// add the key to the text of the current partition
+		partitions[partitions.size() - 1].text += key;
+		drawDisplay();
 	}
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------------- //
-// ############################################################################# //
-// ----------------------------------------------------------------------------- //
+// Menu callbacks
+
+void colorMenuCallback(int entryId)
+{
+	float red, green, blue;
+
+	switch(entryId)
+	{
+		case 1:
+			red = 1; green = 0; blue = 0;
+			break;
+		case 2:
+			red = 0; green = 1; blue = 0;
+			break;
+		case 3:
+			red = 0; green = 0; blue = 1;
+			break;
+		case 4:
+			red = 0; green = 0; blue = 0;
+			break;
+	}
+	activeColor[0] = red; activeColor[1] = green; activeColor[2] = blue;
+	float color[3] {red, green, blue};
+	void *font = partitions[partitions.size() - 1].font;
+	createOrModifyPartition(color, font);
+}
+
+void fontMenuCallback(int entryId)
+{
+	void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+
+	switch(entryId)
+	{
+		case 1:
+			font = GLUT_BITMAP_TIMES_ROMAN_24;
+			break;
+		case 2:
+			font = GLUT_BITMAP_HELVETICA_18;
+	}
+	activeFont = font;
+	createOrModifyPartition(partitions[partitions.size() - 1].color, font);
+}
+
+void topMenuCallback(int entryId)
+{
+	if (entryId == 3) {
+		exit(0);
+	}
+}
+
 
 int main(int argc, char **argv){
 
 	glutInit(&argc, argv);
 	glutInitWindowSize(800, 600);				// specify a window size
 	glutInitWindowPosition(100, 0);			// specify a window position
-	glutCreateWindow("Ijames-Wilson Text Editor");	// create a titled window
+	glutCreateWindow("JMG Text Editor");	// create a titled window
 
 	Init();									// setting up
 
-	glutDisplayFunc(myDisplayCallback);		// register a callback
+	// color sub-menu
+	int colorSubMenuId = glutCreateMenu(colorMenuCallback);
+	glutAddMenuEntry("RED", 1);
+	glutAddMenuEntry("GREEN", 2);
+	glutAddMenuEntry("BLUE", 3);
+	glutAddMenuEntry("BLACK", 4);
 
-	glutMouseFunc(mouseCallback);
+	// font sub-menu
+	int fontSubMenuId = glutCreateMenu(fontMenuCallback);
+	glutAddMenuEntry("TIMES NEW ROMAN", 1);
+	glutAddMenuEntry("HELVETICA", 2);
 
+	// create top level menu
+	int topMenuId = glutCreateMenu(topMenuCallback);
+	glutAddSubMenu("COLOR", colorSubMenuId);
+	glutAddSubMenu("FONT", fontSubMenuId);
+	glutAddMenuEntry("EXIT", 3);
+	glutAttachMenu(GLUT_RIGHT_BUTTON); // attach event to top level menu
+
+	glutDisplayFunc(drawDisplay);		// register a callback
 	glutKeyboardFunc(keyboardCallback);
+	glutMouseFunc(mouseCallback);
 
 	glutMainLoop();							// get into an infinite loop
 
 	return 0;
 }
-
-
-
-
