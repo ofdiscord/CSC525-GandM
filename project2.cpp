@@ -81,6 +81,8 @@ vector<Partition> partitions;
 int infoWindowId;
 int mainWindowId;
 
+// some state toggles
+bool linesShowing = false;
 
 // Utility functions
 
@@ -271,7 +273,9 @@ void drawLines(){
 void drawDisplay(){
 
 	glClear(GL_COLOR_BUFFER_BIT);	// draw the background
-	drawLines();
+	if (linesShowing) {
+		drawLines();
+	}
 	drawPartitions();
 	drawCursor();
 	glFlush(); // flush out the buffer contents
@@ -396,6 +400,10 @@ void topMenuCallback(int entryId)
 {
 	switch (entryId)
 	{
+	case 7:
+		linesShowing = !linesShowing;
+		drawDisplay();
+		break;
 	case 3:
 		saveTextFile();
 		break;
@@ -504,6 +512,7 @@ int main(int argc, char **argv){
 	int topMenuId = glutCreateMenu(topMenuCallback);
 	glutAddSubMenu("COLOR", colorSubMenuId);
 	glutAddSubMenu("FONT", fontSubMenuId);
+	glutAddMenuEntry("TOGGLE LINES", 7);
 	glutAddMenuEntry("SAVE", 3);
 	glutAddMenuEntry("OPEN INFO", 4);
 	glutAddMenuEntry("EXIT", -99);
