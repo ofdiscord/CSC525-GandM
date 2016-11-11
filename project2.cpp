@@ -2,7 +2,7 @@
 PROGRAMMERS: Jamie Johnson, Matthew Wilson and Garren Ijames
 COURSE: CSC 525/625
 MODIFIED BY: Jamie Johnson, Matthew Wilson and Garren Ijames
-LAST MODIFIED DATE: 11/10/2016
+LAST MODIFIED DATE: 11/11/2016
 CONTRIBUTIONS:
 	Matt - 33.3%
 		Code cleanup
@@ -21,7 +21,7 @@ CONTRIBUTIONS:
 			Backspace
 			Newlines
 			Emoji
-    Save to text file
+		Save to text file
 		Debugging
 	Jamie - 33.3%
 		Menus
@@ -36,7 +36,9 @@ NOTES:
 	This simple text editor allows a user to draw text to the window using the keyboard.
 	Color and font options are available via menu, as is the option to show/hide document
 	lines, place a smiley emoji, show the info window (if hidden), save the document to
-	a text file (c:\temp\typed.txt) or exit the application.
+	a text file (c:\temp\typed.txt) or exit the application. A user can use the mouse to
+	select an initial position, backspace unwanted characters, and write and store 30 lines
+	of text characters, with up to 60 characters per line.
 
 	Bugs:
 		Users can enter text beyond 30 lines. This text will start to fall outside of view area
@@ -125,8 +127,8 @@ int infoWindowId;
 int mainWindowId;
 
 // some state toggles
-bool linesShowing = false;                  //are document lines on?
-bool startposition = false;                 //has a start position been selected?
+bool linesShowing = false;							//are document lines on?
+bool startposition = false;							//has a start position been selected?
 
 // emoji bitmap
 GLubyte emoji[32] {
@@ -145,15 +147,15 @@ GLubyte emoji[32] {
 ///Manages writing the drawn text to a text document
 void saveTextFile()
 {
-  //open a file for saving the document
+	//open a file for saving the document
 	ofstream outputFile;
 	outputFile.open("C:\\TEMP\\typed.txt");
 
-	if (outputFile.fail()) {                  //should the file fail to be created or openned
+	if (outputFile.fail()) {						//should the file fail to be created or openned
 		cout << "File was unable to be written.\n"; 
 	}
 	else { 
-		int runningTotal = -1;                   //holds the number of characters on a particular line
+		int runningTotal = -1;						//holds the number of characters on a particular line
     
 		for (int i = 0; i < partitions.size(); i++) { //for each partition
 			if (partitions[i].type == "NEWLINE") {  //if the partition was the start of a new line append a new line
@@ -163,14 +165,14 @@ void saveTextFile()
 				outputFile << ":)";                 
 			}
 			for (int j = 0; j < partitions[i].text.size(); j++) { //for each character in the partition
-        //if the end of the line has been reached append a new line
+				//if the end of the line has been reached append a new line
 				if (++runningTotal % MAX_CHARS == 0 && runningTotal != 0) { 
 					outputFile << "\n";               
 				}
 				outputFile << partitions[i].text[j]; //write character from partition to file
 			}
 		}
-		outputFile.close();                     //close typed.txt
+		outputFile.close();							//close typed.txt
 	}
 }
 
@@ -223,7 +225,7 @@ void createEmoji(){
 void drawCursor(){
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // set polygon mode to fill
 
-	glColor3f(1, 0, 0);                       //set color to red
+	glColor3f(1, 0, 0);								//set color to red
 
   //get the current raster position to determine x coordinate of cursor
 	float currentRastPos[4];
@@ -252,9 +254,9 @@ void drawCursor(){
 
 ///Draws the partitions contents with appropos formatting
 void drawPartitions(){
-	int lastPartitionWidth = 0;               //width of last partition. used to determine x rasterpos
-	int runningTotal = -1;                    //used to determine the number of characters in a line
-	int drawLinePosition = 1;                 //used to determine y rasterpos         
+	int lastPartitionWidth = 0;						//width of last partition. used to determine x rasterpos
+	int runningTotal = -1;							//used to determine the number of characters in a line
+	int drawLinePosition = 1;						//used to determine y rasterpos         
 
 	for (int i = 0; i < partitions.size(); i++) { //for each partition
 		lineHeight = WINHEIGHTBY2 - (drawLinePosition * LINE_HEIGHT) - MARGIN + 3; //calculate y rasterpos
@@ -280,7 +282,7 @@ void drawPartitions(){
 
 		for (int j = 0; j < partitions[i].text.size(); j++) { //for each character in the partition
 			if (++runningTotal == MAX_CHARS){     //if the limit for characters on a line has been reached
-        //move to the next line
+			//move to the next line
 				drawLinePosition += 1;
 				lineHeight = WINHEIGHTBY2 - (drawLinePosition * LINE_HEIGHT) - MARGIN + 3;
 				glRasterPos2i(-WINWIDTHBY2 + MARGIN, lineHeight);
@@ -303,19 +305,19 @@ void drawPartitions(){
 
 ///Draws document guide lines to the screen
 void drawLines(){
-	glPointSize(1);                           //set thin point size
+	glPointSize(1);									//set thin point size
 
-  //draw lines
+	//draw lines
 	glBegin(GL_LINES);
-		glColor3f(0, 0, 0);                     //set color to black
-    //draw bold margin lines
+		glColor3f(0, 0, 0);							//set color to black
+		//draw bold margin lines
 		glVertex2i(-WINWIDTHBY2, (WINHEIGHTBY2) - MARGIN); 
 		glVertex2i(WINWIDTHBY2, (WINHEIGHTBY2) - MARGIN);
 		glVertex2i((-WINWIDTHBY2) + MARGIN -1, WINHEIGHTBY2);
 		glVertex2i((-WINWIDTHBY2) + MARGIN -1, -WINHEIGHTBY2);
-		glColor3f(0.8, 0.8, 0.8);               //set color to light gray
+		glColor3f(0.8, 0.8, 0.8);					//set color to light gray
 		for(int i = 1; i < MAX_LINES + 1; i++) { //for each anticipated line
-      //draw a light guide line
+			//draw a light guide line
 			glVertex2i(-WINWIDTHBY2, ((WINHEIGHTBY2) - MARGIN) - i*LINE_HEIGHT);
 			glVertex2i(WINWIDTHBY2, ((WINHEIGHTBY2) - MARGIN) - i*LINE_HEIGHT);
 		}
@@ -324,20 +326,20 @@ void drawLines(){
 
 ///Fill frame buffer and flush
 void drawDisplay(){
-	glClear(GL_COLOR_BUFFER_BIT);	            //draw background
-	if (linesShowing) {                       //if line showing is turned on
-		drawLines();                            //draw lines
+	glClear(GL_COLOR_BUFFER_BIT);					//draw background
+	if (linesShowing) {								//if line showing is turned on
+		drawLines();								//draw lines
 	}
-	drawPartitions();                         //draw doc contents
-	drawCursor();                             //draw cursor
-	glFlush();                                //flush out the buffer contents
+	drawPartitions();								//draw doc contents
+	drawCursor();									//draw cursor
+	glFlush();										//flush out the buffer contents
 }
 
 
 // Input callbacks
 
 void keyboardCallback(unsigned char key, int x, int y){
-	if (key == 8) // if backspace key
+	if (key == 8)									// if backspace key
 	{
 		if (partitions[partitions.size() - 1].type == "NEWLINE") { //if this was a newline type
 			partitions.pop_back();
@@ -347,21 +349,21 @@ void keyboardCallback(unsigned char key, int x, int y){
 			//remove the last character from the current partition
 			int textSize = partitions[partitions.size() - 1].text.size();
       
-			if (textSize == 0) {                  //if there is no text in this partition
+			if (textSize == 0) {					//if there is no text in this partition
 				if (partitions.size() > 1) {        //if there are valid partitions
-					partitions.pop_back();            //remove partition
+					partitions.pop_back();          //remove partition
 				}
 			}
 			else {
-        //remove the last character of the partition
+				//remove the last character of the partition
 				string newText = partitions[partitions.size() - 1].text.substr(0, textSize - 1);
 				partitions[partitions.size() - 1].text = newText;
 			}
 			drawDisplay();
 		}
 	}
-	else if (key == 13) {                     //if the enter key was pressed
-    //make a new line
+	else if (key == 13) {							//if the enter key was pressed
+		//make a new line
 		createNewLine();
 		createOrModifyPartition();
 		drawDisplay();
@@ -378,12 +380,12 @@ void mouseCallback(int button, int state, int x, int y){
 		if (currentLinePosition >= 0 && currentLinePosition < 30) //if within the valid lines
 			drawCursor();
     
-    //update line position
+		//update line position
 		lastLinePosition = currentLinePosition;
 		currentLinePosition = floor((y - MARGIN) / 18.0);
 
 		for (int i = 0; i < currentLinePosition; i++){ //for each new line
-      //create a new line
+			//create a new line
 			createNewLine();
 			createOrModifyPartition();
 			drawDisplay();
@@ -392,13 +394,13 @@ void mouseCallback(int button, int state, int x, int y){
 		if (currentLinePosition > textLinePosition) //if clicking to a new line
 			glRasterPos2i(MARGIN - (WINWIDTHBY2), (WINHEIGHTBY2) - currentLinePosition * LINE_HEIGHT - MARGIN);
 		
-    int ClickXDist = floor((x - MARGIN) / 9); //calculate the number of spaces need to reach new cursor location
+    int ClickXDist = floor((x - MARGIN) / 9);		//calculate the number of spaces need to reach new cursor location
 
-		for (int i = 0; i < ClickXDist; i++){   //for each space needed
-			keyboardCallback(32, 0, 0);           //simulate a space key press to update partition and cursor easily
+		for (int i = 0; i < ClickXDist; i++){		//for each space needed
+			keyboardCallback(32, 0, 0);				//simulate a space key press to update partition and cursor easily
 		}
     
-		startposition = true;                   //a start position has been chosen
+		startposition = true;						//a start position has been chosen
 	}
 }
 
@@ -408,7 +410,7 @@ void mouseCallback(int button, int state, int x, int y){
 void colorMenuCallback(int entryId) {
 	float red, green, blue;
 
-  //get color according to user selection
+	//get color according to user selection
 	switch(entryId) {
 		case 1:
 			red = 1; green = 0; blue = 0;
@@ -424,7 +426,7 @@ void colorMenuCallback(int entryId) {
 			break;
 	}
   
-  //set new color formatting and modify partition
+	//set new color formatting and modify partition
 	activeColor[0] = red; activeColor[1] = green; activeColor[2] = blue;
 	float color[3] {red, green, blue};
 	void *font = partitions[partitions.size() - 1].font;
@@ -435,7 +437,7 @@ void colorMenuCallback(int entryId) {
 void fontMenuCallback(int entryId) {
 	void *font = GLUT_BITMAP_TIMES_ROMAN_10;
 
-  //get font according to user selection
+	//get font according to user selection
 	switch(entryId) {
 		case 1:
 			font = GLUT_BITMAP_TIMES_ROMAN_10;
@@ -448,7 +450,7 @@ void fontMenuCallback(int entryId) {
 			break;
 	}
   
-  //set font formatting and modify partition
+	//set font formatting and modify partition
 	activeFont = font;
 	createOrModifyPartition(partitions[partitions.size() - 1].color, font);
 }
@@ -457,23 +459,23 @@ void fontMenuCallback(int entryId) {
 void topMenuCallback(int entryId) {
 
 	switch (entryId) {
-	case 8:                                   //User selected Insert Smile
+	case 8:											//User selected Insert Smile
 		createEmoji();
 		createOrModifyPartition();
 		drawDisplay();
 		break;
-	case 7:                                   //User selected Toggle Lines
+	case 7:											//User selected Toggle Lines
 		linesShowing = !linesShowing;
 		drawDisplay();
 		break;
-	case 3:                                   //User selected Save
+	case 3:											//User selected Save
 		saveTextFile();
 		break;
-	case 4:                                   //User selected Show Info
-		glutSetWindow(infoWindowId);            // changing the current window to the "Info Window"
-		glutShowWindow();                       // displaying the Info Window
+	case 4:											//User selected Show Info
+		glutSetWindow(infoWindowId);				// changing the current window to the "Info Window"
+		glutShowWindow();							// displaying the Info Window
 		break;
-	case -99:                                 //User selected Exit
+	case -99:										//User selected Exit
 		exit(0);      
 		break;
 	}
@@ -481,13 +483,13 @@ void topMenuCallback(int entryId) {
 
 ///Draws info text to info window
 void infoInstructions() {
-	glClear(GL_COLOR_BUFFER_BIT);             //draw background
+	glClear(GL_COLOR_BUFFER_BIT);					//draw background
 	glColor3f(0.55, .20, 0.45);
 
   //Information strings
 	string myArray[21] = {
 		"DISPLAY TEXT:",
-		"Place the cursor within the window",
+		"Place the cursor within the window with a click",
 		"and type the text of your choice. ",
 		"Each line may hold 60 characters with a max of 30 lines.",
 
@@ -498,10 +500,9 @@ void infoInstructions() {
 		"CHANGE COLOR/FONT STYLE:",
 		"Open the right-menu,",
     
-    "SMILEY EMOJI",
-    "Select Insert Smile to add a smiley face to the document.",
+		"SMILEY EMOJI",
+		"Select Insert Smile to add a smiley face to the document.",
     
-
 		"SAVE TEXT:",
 		"Select Save from the right-click menu",
 		"Text is saved to c:\\temp\\typed.txt.",
@@ -517,9 +518,9 @@ void infoInstructions() {
 		"within the Info window."
 	};
 
-	for (int i = 0; i < 19; i++) {            //for each line of info text
+	for (int i = 0; i < 21; i++) {					//for each line of info text
     //set position to draw from
-		glRasterPos2i(-300, 250 - 25 * i); 
+		glRasterPos2i(-320, 250 - 25 * i); 
 		for (int j = 0; j < myArray[i].size(); j++) { //for each character in the string
 			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, myArray[i][j]);
 		}
@@ -528,15 +529,15 @@ void infoInstructions() {
 
 ///Display callback for info window
 void infoDisplayCallback() {
-	glClear(GL_COLOR_BUFFER_BIT);	            //draw the background
-	infoInstructions();                       //draw instructions to screen
+	glClear(GL_COLOR_BUFFER_BIT);					//draw the background
+	infoInstructions();								//draw instructions to screen
 	glFlush();
 }
 
 ///Info selection menu for hiding info window
 void info_menu(int id) {
 	if (id == 1) {
-		glutHideWindow();                       //hide info window
+		glutHideWindow();							//hide info window
 	}
 }
 
@@ -566,7 +567,7 @@ int main(int argc, char **argv){
 	glutInitWindowPosition(925, 0);
 	infoWindowId = glutCreateWindow("Info");
 
-	Init();                                   //Initialize info window
+	Init();											//Initialize info window
 
 	glutCreateMenu(info_menu);
 	glutAddMenuEntry("CLOSE", 1);
@@ -580,7 +581,7 @@ int main(int argc, char **argv){
 	glutInitWindowPosition(100, 0);
 	mainWindowId = glutCreateWindow("JMG Text Editor");
 
-	Init();                                   //Initialize editor window
+	Init();											//Initialize editor window
 
 	// color sub-menu
 	int colorSubMenuId = glutCreateMenu(colorMenuCallback);
@@ -605,13 +606,13 @@ int main(int argc, char **argv){
 	glutAddMenuEntry("OPEN INFO", 4);
 	glutAddMenuEntry("EXIT", -99);
   
-	glutAttachMenu(GLUT_RIGHT_BUTTON);        //attach event to top level menu
+	glutAttachMenu(GLUT_RIGHT_BUTTON);				//attach event to top level menu
 
-	glutDisplayFunc(drawDisplay);		          //register editor display callback
-	glutKeyboardFunc(keyboardCallback);       //register keyboard callback
-	glutMouseFunc(mouseCallback);             //register a mouse callback
+	glutDisplayFunc(drawDisplay);					//register editor display callback
+	glutKeyboardFunc(keyboardCallback);				//register keyboard callback
+	glutMouseFunc(mouseCallback);					//register a mouse callback
 
-	glutMainLoop();							              //start glut display loop
+	glutMainLoop();							        //start glut display loop
 
 	return 0;
 }
