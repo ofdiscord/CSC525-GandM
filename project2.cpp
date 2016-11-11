@@ -29,7 +29,8 @@ INSTRUCTION FOR COMPILATION AND EXECUTION:
 4.		Press Ctrl+F5						to EXECUTE
 ==================================================================================================*/
 #include <stdlib.h>
-#include <GL/glut.h>				// include GLUT library
+#include <GL/glut.h>
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -37,6 +38,7 @@ INSTRUCTION FOR COMPILATION AND EXECUTION:
 
 using std::vector;
 using std::string;
+using std::ofstream;
 using std::cout;
 
 // Variable Declarations
@@ -55,9 +57,6 @@ int textLinePosition    = 0;
 int currentLinePosition = 0;
 int totalTextWidth      = 0;
 int lineHeight;
-
-// string to contain all text for different utilities
-string text = "";
 
 // partition sections
 struct Partition {
@@ -78,8 +77,45 @@ void* activeFont;
 // vector containing partitions
 vector<Partition> partitions;
 
+// window id's
+int infoWindowId;
+int mainWindowId;
+
 
 // Utility functions
+
+void saveTextFile()
+{
+	ofstream outputFile;
+	outputFile.open("C:\\TEMP\\typed.txt");
+
+	if (outputFile.fail())
+	{
+		cout << "File was unable to be written.\n";
+		//system("pause");
+		//return 0;
+	}
+	else
+	{
+		int runningTotal = 0;
+		for (int i = 0; i < partitions.size(); i++)
+		{
+			if (partitions[i].type == "NEWLINE")
+			{
+				outputFile << "\n";
+			}
+			for (int j = 0; j < partitions[i].text.size(); j++)
+			{
+				if (++runningTotal % 30 == 0)
+				{
+					outputFile << "\n";
+				}
+				outputFile << partitions[i].text[j];
+			}
+		}
+		outputFile.close();
+	}
+}
 
 void createOrModifyPartition(float color[3] = activeColor, void *font = activeFont){
 
@@ -197,16 +233,16 @@ void drawPartitions(){
 
 		for (int j = 0; j < partitions[i].text.size(); j++)
 		{
-			
-			
+
+
 			if (++runningTotal % 30 == 0 && runningTotal != 0) {
 				drawLinePosition += 1;
 				lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN  +1;
 				glRasterPos2i(-(WINDOW_WIDTH / 2) + MARGIN, lineHeight);
 				lastPartitionWidth = 0;
 			}
-			
-			
+
+
 			glutBitmapCharacter(partitions[i].font, partitions[i].text[j]);
 			lastPartitionWidth += glutBitmapWidth(partitions[i].font, partitions[i].text[j]);
 		}
@@ -241,9 +277,8 @@ void drawDisplay(){
 	glFlush(); // flush out the buffer contents
 }
 
+
 // Input callbacks
-
-
 
 void keyboardCallback(unsigned char key, int x, int y){
 	if (key == 8) // if backspace key
@@ -359,20 +394,98 @@ void fontMenuCallback(int entryId)
 
 void topMenuCallback(int entryId)
 {
-	if (entryId == -99) {
+	switch (entryId)
+	{
+	case 3:
+		saveTextFile();
+		break;
+	case 4:
+		glutSetWindow(infoWindowId); // changing the current window to the "Info Window"
+		glutShowWindow(); // displaying the Info Window
+		break;
+	case -99:
 		exit(0);
+		break;
 	}
 }
 
+void infoInstructions()
+{
+	/*Display the message inside the Info Window*/
+	glClear(GL_COLOR_BUFFER_BIT);
+	glColor3f(0.55, .20, 0.45);
+
+	string myArray[18] = {
+		"DISPLAY TEXT:",
+		"Place the cursor within the window",
+		"and type the text of your choice. ",
+
+		"CHANGE COLOR/FONT STYLE:",
+		"Right click the mouse button in the main",
+		"window and make your selection. ",
+
+		"CLOSE MAIN WINDOW:",
+		"Select the Close option from the drop down list.",
+
+		"OPEN/RE-OPEN INFO WINDOW:",
+		"Right click the mouse button and select the Info option.",
+
+		"CLOSE INFO WINDOW: ",
+		"Right click the mouse button within the Info",
+		"window and select the Close option.",
+	};
+
+	for (int i = 0; i < 18; i++)
+	{
+		glRasterPos2i(-375, 250 - 50 * i); // position
+		for (int j = 0; j < myArray[i].size(); j++)
+		{
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, myArray[i][j]);
+		}
+	}
+}
+
+void infoDisplayCallback()
+{
+	glClear(GL_COLOR_BUFFER_BIT);	// draw the background
+
+	infoInstructions(); // call the instructions function
+
+	glFlush();
+}
+
+void info_menu(int id)
+{
+	if (id == 1)
+	{
+		glutHideWindow(); //hide info window
+	}
+}
 
 int main(int argc, char **argv){
 
 	glutInit(&argc, argv);
-	glutInitWindowSize(800, 600);				// specify a window size
-	glutInitWindowPosition(100, 0);			// specify a window position
-	glutCreateWindow("JMG Text Editor");	// create a titled window
 
-	Init();									// setting up
+	// info window
+	glutInitWindowSize(400, 600);
+	glutInitWindowPosition(925, 0);
+	infoWindowId = glutCreateWindow("Info");
+
+	Init();
+
+	glutCreateMenu(info_menu);
+	glutAddMenuEntry("CLOSE", 1);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+	glutDisplayFunc(infoDisplayCallback);
+
+
+	// main window
+	glutInitWindowSize(800, 600);
+	glutInitWindowPosition(100, 0);
+	mainWindowId = glutCreateWindow("JMG Text Editor");
+
+	Init();
 
 	// color sub-menu
 	int colorSubMenuId = glutCreateMenu(colorMenuCallback);
@@ -391,6 +504,8 @@ int main(int argc, char **argv){
 	int topMenuId = glutCreateMenu(topMenuCallback);
 	glutAddSubMenu("COLOR", colorSubMenuId);
 	glutAddSubMenu("FONT", fontSubMenuId);
+	glutAddMenuEntry("SAVE", 3);
+	glutAddMenuEntry("OPEN INFO", 4);
 	glutAddMenuEntry("EXIT", -99);
 	glutAttachMenu(GLUT_RIGHT_BUTTON); // attach event to top level menu
 
