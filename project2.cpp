@@ -44,12 +44,16 @@ using std::cout;
 // Variable Declarations
 
 // program constants
-const int WINDOW_HEIGHT = 600;
-const int WINDOW_WIDTH  = 800;
-const int LINE_HEIGHT   = 18; // will likely change
+const int WINDOW_HEIGHT = 650;
+const int WINDOW_WIDTH  = 590;
+const int WINWIDTHBY2	 = WINDOW_WIDTH / 2;
+const int WINHEIGHTBY2 = WINDOW_HEIGHT / 2;
+const int LINE_HEIGHT   = 20; // will likely change
 const int MARGIN        = 20;
 const int MAX_LINES     = 30;
 const int CURSOR_SIZE   = 10;
+const int MAX_CHARS		= 60;
+const int CURSOR_HEIGHT = LINE_HEIGHT - 4;
 
 // global access variables: typing related
 int lastLinePosition    = 0;
@@ -68,7 +72,7 @@ struct Partition {
 
 // default style
 float defaultColor[3] {0, 0, 0};
-void* defaultFont = GLUT_BITMAP_9_BY_15;//GLUT_BITMAP_HELVETICA_18;
+void* defaultFont = GLUT_BITMAP_9_BY_15;
 
 // active colors
 float activeColor[3];
@@ -94,8 +98,6 @@ void saveTextFile()
 	if (outputFile.fail())
 	{
 		cout << "File was unable to be written.\n";
-		//system("pause");
-		//return 0;
 	}
 	else
 	{
@@ -108,7 +110,7 @@ void saveTextFile()
 			}
 			for (int j = 0; j < partitions[i].text.size(); j++)
 			{
-				if (++runningTotal % 30 == 0)
+				if (++runningTotal % MAX_CHARS == 0 && runningTotal != 0)
 				{
 					outputFile << "\n";
 				}
@@ -167,7 +169,12 @@ void Init(){
 	createOrModifyPartition();
 
 	glClearColor(1, 1, 1, 0);			// specify a background color: white
-	gluOrtho2D(-400, 400, -300, 300);  // specify a viewing area
+	gluOrtho2D(-WINWIDTHBY2, WINWIDTHBY2, -(WINDOW_HEIGHT / 2), (WINDOW_HEIGHT / 2));  // specify a viewing area
+}
+
+void InfoInit(){
+	glClearColor(1, 1, 1, 0);			// specify a background color: white
+	gluOrtho2D(-200, 200, -300, 300);  // specify a viewing area
 }
 
 
@@ -184,21 +191,12 @@ void drawCursor(){
 	float currentRastPos[4];
 	glGetFloatv(GL_CURRENT_RASTER_POSITION, currentRastPos);
 
-	//int y0, x0;
-	//if (partitions.back().text.size() % 30 == 0 && partitions.back().text.size() != 0) {
-	//	y0 = lineHeight -18;
-	//	x0 = ((-WINDOW_WIDTH / 2) + MARGIN);
-	//}
-	//else{
-	//	y0 = lineHeight;
-	//	x0 = currentRastPos[0] - (WINDOW_WIDTH / 2);
-	//}
 	int y0 = lineHeight;
-	int x0 = currentRastPos[0] - (WINDOW_WIDTH / 2);
+	int x0 = currentRastPos[0] - WINWIDTHBY2;
 	int x1 = x0;
 	int x2 = x0 + CURSOR_SIZE;
 	int x3 = x2;
-	int y1 = y0 + LINE_HEIGHT;
+	int y1 = y0 + CURSOR_HEIGHT;
 	int y2 = y1;
 	int y3 = y0;
 
@@ -220,27 +218,27 @@ void drawPartitions(){
 
 	for (int i = 0; i < partitions.size(); i++)
 	{
-		lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN;
+		lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN + 3;
 
 		if (partitions[i].type == "NEWLINE") {
 			drawLinePosition += 1;
-			lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN +1;
+			lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN + 3;
 			lastPartitionWidth = 0;
-			runningTotal = 0;
-			glRasterPos2i(-(WINDOW_WIDTH /2) + MARGIN, lineHeight);
+			runningTotal = -1;
+			glRasterPos2i(-WINWIDTHBY2 + MARGIN, lineHeight);
 		}
 
 		glColor3fv(partitions[i].color);
-		glRasterPos2i(lastPartitionWidth - (WINDOW_WIDTH / 2) + MARGIN, lineHeight);
+		glRasterPos2i(lastPartitionWidth - WINWIDTHBY2 + MARGIN, lineHeight);
 
 		for (int j = 0; j < partitions[i].text.size(); j++)
 		{
 
 
-			if (++runningTotal % 30 == 0 && runningTotal != 0) {
+			if (++runningTotal % MAX_CHARS == 0 && runningTotal != 0) {
 				drawLinePosition += 1;
-				lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN  +1;
-				glRasterPos2i(-(WINDOW_WIDTH / 2) + MARGIN, lineHeight);
+				lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN + 3;
+				glRasterPos2i(-WINWIDTHBY2 + MARGIN, lineHeight);
 				lastPartitionWidth = 0;
 			}
 
@@ -258,15 +256,20 @@ void drawLines(){
 
 	glBegin(GL_LINES);
 		glColor3f(0, 0, 0);
-		glVertex2i(-WINDOW_WIDTH / 2, (WINDOW_HEIGHT / 2) - MARGIN); // margin line
-		glVertex2i(WINDOW_WIDTH / 2, (WINDOW_HEIGHT / 2) - MARGIN);
-		glVertex2i((-WINDOW_WIDTH / 2) + MARGIN, WINDOW_HEIGHT / 2);
-		glVertex2i((-WINDOW_WIDTH / 2) + MARGIN, -WINDOW_HEIGHT / 2);
+		glVertex2i(-WINWIDTHBY2, (WINDOW_HEIGHT / 2) - MARGIN); // margin line
+		glVertex2i(WINWIDTHBY2, (WINDOW_HEIGHT / 2) - MARGIN);
+		glVertex2i(WINWIDTHBY2 + MARGIN - 1, WINDOW_HEIGHT / 2);
+		glVertex2i(WINWIDTHBY2 + MARGIN - 1, -WINDOW_HEIGHT / 2);
 		glColor3f(0.8, 0.8, 0.8);
 		for(int i = 1; i < MAX_LINES + 1; i++) {
-			glVertex2i(-WINDOW_WIDTH / 2, ((WINDOW_HEIGHT / 2) - MARGIN) - i*LINE_HEIGHT);
-			glVertex2i(WINDOW_WIDTH / 2, ((WINDOW_HEIGHT / 2) - MARGIN) - i*LINE_HEIGHT);
+			glVertex2i(-WINWIDTHBY2, ((WINDOW_HEIGHT / 2) - MARGIN) - i*LINE_HEIGHT);
+			glVertex2i(WINWIDTHBY2, ((WINDOW_HEIGHT / 2) - MARGIN) - i*LINE_HEIGHT);
 		}
+		glColor3f(0, 0, 0);
+		glVertex2i(-WINWIDTHBY2, (WINDOW_HEIGHT / 2) - MARGIN); // margin line
+		glVertex2i(WINWIDTHBY2, (WINDOW_HEIGHT / 2) - MARGIN);
+		glVertex2i((-WINWIDTHBY2) + MARGIN - 1, WINDOW_HEIGHT / 2);
+		glVertex2i((-WINWIDTHBY2) + MARGIN - 1, -WINDOW_HEIGHT / 2);
 	glEnd();
 }
 
@@ -336,7 +339,7 @@ void mouseCallback(int button, int state, int x, int y){
 		}
 
 		if (currentLinePosition > textLinePosition)
-			glRasterPos2i(MARGIN - (WINDOW_WIDTH / 2), (WINDOW_HEIGHT / 2) - currentLinePosition * LINE_HEIGHT - MARGIN);
+			glRasterPos2i(MARGIN - WINWIDTHBY2, (WINDOW_HEIGHT / 2) - currentLinePosition * LINE_HEIGHT - MARGIN);
 
 
 		int ClickXDist = std::floor((x - MARGIN) / 9);
@@ -475,7 +478,7 @@ int main(int argc, char **argv){
 	glutInit(&argc, argv);
 
 	// info window
-	glutInitWindowSize(400, 600);
+	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT;
 	glutInitWindowPosition(925, 0);
 	infoWindowId = glutCreateWindow("Info");
 
@@ -489,7 +492,7 @@ int main(int argc, char **argv){
 
 
 	// main window
-	glutInitWindowSize(800, 600);
+	glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 	glutInitWindowPosition(100, 0);
 	mainWindowId = glutCreateWindow("JMG Text Editor");
 
