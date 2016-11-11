@@ -84,6 +84,18 @@ int mainWindowId;
 // some state toggles
 bool linesShowing = false;
 
+// emoji bitmap
+GLubyte emoji[32] {
+	0x0f, 0xf0, 0x38, 0x1c,
+	0x60, 0x06, 0xc0, 0x03,
+	0xc0, 0x03, 0x87, 0xe1,
+	0x84, 0x21, 0x8e, 0x71,
+	0x80, 0x01, 0x80, 0x01,
+	0x86, 0x61, 0xc6, 0x63,
+	0x60, 0x06, 0x30, 0x0c,
+	0x18, 0x18, 0x0f, 0xf0
+};
+
 // Utility functions
 
 void saveTextFile()
@@ -124,6 +136,7 @@ void createOrModifyPartition(float color[3] = activeColor, void *font = activeFo
 	bool modifyPartition = partitions.size() > 0;
 	modifyPartition = modifyPartition && partitions[partitions.size() - 1].text == "";
 	modifyPartition = modifyPartition && partitions[partitions.size() - 1].type != "NEWLINE";
+	modifyPartition = modifyPartition && partitions[partitions.size() -1].type != "EMOJI";
 
 	if (modifyPartition)
 	{
@@ -152,6 +165,14 @@ void createNewLine(){
 	partitions.push_back(newline);
 }
 
+void createEmoji(){
+
+	// partition with type 'EMOJI'
+	Partition emoji;
+	emoji.type = "EMOJI";
+	partitions.push_back(emoji);
+}
+
 
 // Setting up functions
 
@@ -168,6 +189,7 @@ void Init(){
 
 	glClearColor(1, 1, 1, 0);			// specify a background color: white
 	gluOrtho2D(-400, 400, -300, 300);  // specify a viewing area
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
 
@@ -230,13 +252,17 @@ void drawPartitions(){
 			glRasterPos2i(-(WINDOW_WIDTH /2) + MARGIN, lineHeight);
 		}
 
+		if (partitions[i].type == "EMOJI") {
+				glBitmap(16, 16, 0, 0, 16, 0, emoji);
+				runningTotal += 1;
+				lastPartitionWidth += 20;
+		}
+
 		glColor3fv(partitions[i].color);
 		glRasterPos2i(lastPartitionWidth - (WINDOW_WIDTH / 2) + MARGIN, lineHeight);
 
 		for (int j = 0; j < partitions[i].text.size(); j++)
 		{
-
-
 			if (++runningTotal % 30 == 0 && runningTotal != 0) {
 				drawLinePosition += 1;
 				lineHeight = (WINDOW_HEIGHT / 2) - (drawLinePosition * LINE_HEIGHT) - MARGIN  +1;
@@ -390,7 +416,6 @@ void fontMenuCallback(int entryId)
 		default:
 			font = GLUT_BITMAP_9_BY_15;
 			break;
-
 	}
 	activeFont = font;
 	createOrModifyPartition(partitions[partitions.size() - 1].color, font);
@@ -400,6 +425,11 @@ void topMenuCallback(int entryId)
 {
 	switch (entryId)
 	{
+	case 8:
+		createEmoji();
+		createOrModifyPartition();
+		drawDisplay();
+		break;
 	case 7:
 		linesShowing = !linesShowing;
 		drawDisplay();
@@ -512,6 +542,7 @@ int main(int argc, char **argv){
 	int topMenuId = glutCreateMenu(topMenuCallback);
 	glutAddSubMenu("COLOR", colorSubMenuId);
 	glutAddSubMenu("FONT", fontSubMenuId);
+	glutAddMenuEntry("INSERT SMILE", 8);
 	glutAddMenuEntry("TOGGLE LINES", 7);
 	glutAddMenuEntry("SAVE", 3);
 	glutAddMenuEntry("OPEN INFO", 4);
