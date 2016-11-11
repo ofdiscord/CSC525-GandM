@@ -118,6 +118,10 @@ void saveTextFile()
 			{
 				outputFile << "\n";
 			}
+			else if (partitions[i].type == "EMOJI")
+			{
+				outputFile << ":)";
+			}
 			for (int j = 0; j < partitions[i].text.size(); j++)
 			{
 				if (++runningTotal % 30 == 0)
